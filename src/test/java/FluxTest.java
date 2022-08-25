@@ -4,8 +4,13 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
@@ -104,5 +109,56 @@ public class FluxTest {
                 .verifyComplete();
 
 // TODO: 8/20/22 Need investigation on its use cases
+    }
+
+    @Test
+    public void IOtest() throws Exception {
+        Mono<List<String>> listMono = Mono.fromCallable(() -> Files.readAllLines(Path.of("aa.txt")))
+                .log()
+                .subscribeOn(Schedulers.boundedElastic());
+        Thread.sleep(10000);
+
+        listMono.subscribe(a -> log.info("data is {}", a));
+
+    }
+
+    @Test
+    public void deferTest() {
+        Mono<Long> stringMono = Mono.defer(() -> Mono.just(System.currentTimeMillis())).log();
+
+        stringMono.subscribe();
+        stringMono.subscribe();
+
+        // TODO: 8/26/22 Defer ensures that publisher instantiates when subscriber subscribes.
+
+    }
+
+    @Test
+    public void mergeAndConcatTest() throws Exception {
+        Flux<String> a = Flux.just("A", "B").delayElements(Duration.ofMillis(200));
+        Flux<String> b = Flux.just("C", "D");
+
+        Flux<String> merged = Flux.merge(a, b, a).log();
+        Flux<String> concated = Flux.concat(a, b, a).log();
+
+        merged.subscribe();
+        concated.subscribe();
+        Thread.sleep(2000);
+
+        // TODO: 8/26/22 merge works eagerly, but concat doesn't.
+
+    }
+
+    @Test
+    public void zipTest() throws Exception {
+        Flux<String> a = Flux.just("A", "B").delayElements(Duration.ofMillis(200));;
+        Flux<String> b = Flux.just("C", "D", "E");
+
+        Flux<String> zipped = Flux.zip(a, b)
+                .flatMap(objects -> Flux.just(String.join("",objects.getT1(),objects.getT2()))).log();
+
+        zipped.subscribe();
+        Thread.sleep(2000);
+
     }
 }
