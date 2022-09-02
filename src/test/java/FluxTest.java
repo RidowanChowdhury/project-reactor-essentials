@@ -161,4 +161,18 @@ public class FluxTest {
         Thread.sleep(2000);
 
     }
+
+    @Test
+    public void FlatmapTest() {
+        Flux<String> a = Flux.just("A","B");
+        Flux<Integer> b = a.flatMap(x-> {
+            return Flux.just(1);
+        });
+        b.subscribe();
+        Flux<Integer> c = a.flatMap(x-> {
+            return Flux.fromIterable(List.of(1,2));
+        });
+        c.subscribe(y-> System.out.println(y));
+        // TODO: 9/3/22 With Flatmap return type can be changed, but requires the return inside flatmap to be a publisher.
+    }
 }
