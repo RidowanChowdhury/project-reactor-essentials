@@ -151,11 +151,12 @@ public class FluxTest {
 
     @Test
     public void zipTest() throws Exception {
-        Flux<String> a = Flux.just("A", "B").delayElements(Duration.ofMillis(200));;
+        Flux<String> a = Flux.just("A", "B").delayElements(Duration.ofMillis(200));
+        ;
         Flux<String> b = Flux.just("C", "D", "E");
 
         Flux<String> zipped = Flux.zip(a, b)
-                .flatMap(objects -> Flux.just(String.join("",objects.getT1(),objects.getT2()))).log();
+                .flatMap(objects -> Flux.just(String.join("", objects.getT1(), objects.getT2()))).log();
 
         zipped.subscribe();
         Thread.sleep(2000);
@@ -164,15 +165,16 @@ public class FluxTest {
 
     @Test
     public void FlatmapTest() {
-        Flux<String> a = Flux.just("A","B");
-        Flux<Integer> b = a.flatMap(x-> {
-            return Flux.just(1);
+        Flux<String> a = Flux.just("A", "B");
+        Flux<Integer> b = a
+                .map(m -> Flux.just(4))
+                .flatMap(x -> Flux.just(1)
+                );
+        b.subscribe(x -> System.out.println(x));
+        Flux<Integer> c = a.flatMap(x -> {
+            return Flux.fromIterable(List.of(1, 2));
         });
-        b.subscribe();
-        Flux<Integer> c = a.flatMap(x-> {
-            return Flux.fromIterable(List.of(1,2));
-        });
-        c.subscribe(y-> System.out.println(y));
-        // TODO: 9/3/22 With Flatmap return type can be changed, but requires the return inside flatmap to be a publisher.
+        c.subscribe(y -> System.out.println(y));
+        // TODO: 9/3/22 With in Map and Flatmap return type can be changed, but requires the return inside flatmap to be a publisher.
     }
 }
